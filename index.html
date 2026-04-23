@@ -35,6 +35,9 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
         .logo {
@@ -51,6 +54,30 @@
             width: 8px; height: 8px;
             background: var(--orange);
             border-radius: 50%;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .grid-btn {
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--muted);
+            padding: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .15s;
+        }
+        .grid-btn.active {
+            color: var(--orange);
+            border-color: var(--orange);
+            background: rgba(212, 82, 40, 0.1);
         }
 
         .mode-switch {
@@ -84,7 +111,10 @@
             flex: 1;
             display: flex;
             justify-content: center;
-            padding: 2rem 1rem 3rem;
+            padding: 1rem;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
         .card {
@@ -92,16 +122,22 @@
             max-width: 520px;
             background: var(--panel);
             border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
 
         .stage {
             background: var(--pokestop-blue);
-            padding: 2.5rem 3rem;
+            padding: 2.5rem 2rem;
             display: flex;
             flex-direction: column;
             align-items: center;
             position: relative;
             user-select: none;
+            touch-action: pan-y;
             transition: background 0.3s;
         }
         .stage.drag-over { outline: 2px dashed var(--orange); outline-offset: -4px; }
@@ -110,18 +146,20 @@
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             color: #fff;
-            width: 32px; height: 32px;
+            width: 44px; height: 44px;
             display: flex; align-items: center; justify-content: center;
             cursor: pointer;
-            font-size: 20px;
+            font-size: 28px;
             line-height: 1;
             border-radius: 50%;
             z-index: 10;
+            transition: background 0.2s;
         }
-        .nav-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.4); }
+        .nav-btn:hover:not(:disabled) { background: rgba(0, 0, 0, 0.4); }
         .nav-btn:disabled { opacity: 0; cursor: default; }
         .nav-btn.prev { left: 10px; }
         .nav-btn.next { right: 10px; }
@@ -167,6 +205,40 @@
             user-select: none;
         }
 
+        .grid-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            display: none;
+        }
+        
+        .grid-3x3 { display: block; }
+        .grid-3x3 .line { position: absolute; background: rgba(255, 255, 255, 0.4); }
+        .grid-3x3 .v1 { left: 33.33%; top: 0; bottom: 0; width: 1px; }
+        .grid-3x3 .v2 { left: 66.66%; top: 0; bottom: 0; width: 1px; }
+        .grid-3x3 .h1 { top: 33.33%; left: 0; right: 0; height: 1px; }
+        .grid-3x3 .h2 { top: 66.66%; left: 0; right: 0; height: 1px; }
+
+        .grid-center { display: block; }
+        .grid-center .center-cross {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px; height: 20px;
+        }
+        .grid-center .center-cross::before,
+        .grid-center .center-cross::after {
+            content: ''; position: absolute; background: rgba(255, 255, 255, 0.6);
+        }
+        .grid-center .center-cross::before { top: 50%; left: 0; width: 100%; height: 1px; }
+        .grid-center .center-cross::after { left: 50%; top: 0; height: 100%; width: 1px; }
+        
+        .grid-center .edge-mark { position: absolute; background: rgba(255, 255, 255, 0.5); }
+        .grid-center .mark-t { top: 0; left: 50%; width: 1px; height: 8px; transform: translateX(-50%); }
+        .grid-center .mark-b { bottom: 0; left: 50%; width: 1px; height: 8px; transform: translateX(-50%); }
+        .grid-center .mark-l { left: 0; top: 50%; height: 1px; width: 8px; transform: translateY(-50%); }
+        .grid-center .mark-r { right: 0; top: 50%; height: 1px; width: 8px; transform: translateY(-50%); }
+
         .empty {
             width: 100%; height: 100%;
             display: flex; flex-direction: column;
@@ -197,47 +269,74 @@
 
         .controls {
             border-top: 1px solid var(--border);
-            padding: 1rem 1.25rem 1.25rem;
+            padding: 1.25rem;
             display: flex;
             flex-direction: column;
-            gap: .85rem;
+            gap: 1rem;
         }
 
         .thumbs {
-            display: flex; flex-wrap: wrap; gap: 5px;
+            display: flex; flex-wrap: wrap; gap: 6px;
             min-height: 0;
+            max-height: 150px;
+            overflow-y: auto;
+            padding: 2px;
         }
         .thumb {
-            width: 42px; height: 42px;
+            width: 48px; height: 48px;
             object-fit: cover;
             border: 2px solid transparent;
             cursor: pointer;
             opacity: .5;
-            transition: opacity .15s, border-color .15s;
+            transition: all .15s;
+            border-radius: 4px;
         }
-        .thumb.active { border-color: var(--orange); opacity: 1; }
+        .thumb.active { border-color: var(--orange); opacity: 1; transform: scale(1.05); }
         .thumb:hover { opacity: .85; }
 
         .dropzone {
-            border: 1px dashed var(--border);
-            padding: .9rem;
+            border: 2px dashed var(--border);
+            padding: 1.25rem;
+            border-radius: 6px;
             text-align: center;
             cursor: pointer;
-            transition: border-color .15s;
+            transition: all .2s;
+            background: rgba(255,255,255,0.02);
         }
-        .dropzone:hover, .dropzone.drag-over { border-color: var(--orange); }
+        .dropzone:hover, .dropzone.drag-over { 
+            border-color: var(--orange); 
+            background: rgba(212, 82, 40, 0.05);
+        }
         .drop-label {
             display: flex; align-items: center; justify-content: center;
-            gap: 7px; color: var(--muted); font-size: 13px; cursor: pointer;
+            gap: 8px; color: var(--text); font-size: 14px; cursor: pointer;
         }
-        .dropzone:hover .drop-label,
-        .dropzone.drag-over .drop-label { color: var(--text); }
         input[type="file"] { display: none; }
 
-        .hint {
+        .footer {
+            padding: 0 0.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             font-size: 11px;
             color: var(--muted);
-            text-align: center;
+        }
+
+        /* PC等、横長画面用の調整 */
+        @media (min-width: 768px) {
+            main {
+                padding: 2rem;
+                align-items: flex-start;
+            }
+            .card {
+                max-width: 600px; /* PCでは少し大きめに表示 */
+            }
+            .holder {
+                width: 300px; height: 300px; /* プレビューを少し拡大 */
+            }
+            .ring-1 { width: 322px; height: 322px; }
+            .ring-2 { width: 342px; height: 342px; }
+            .thumb { width: 56px; height: 56px; }
         }
     </style>
 </head>
@@ -246,28 +345,48 @@
 <header>
     <div class="logo">
         <span class="logo-dot"></span>
-        Spot Preview
+        ポケストポスカ確認用
     </div>
-    <div class="mode-switch">
-        <button class="mode-btn active" id="btn-disk" title="ディスクモード">
-            <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>
+    <div class="header-controls">
+        <button class="grid-btn" id="btn-grid-toggle" title="グリッド切替">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="8" y1="3" x2="8" y2="21" />
+                <line x1="16" y1="3" x2="16" y2="21" />
+                <line x1="3" y1="8" x2="21" y2="8" />
+                <line x1="3" y1="16" x2="21" y2="16" />
+            </svg>
         </button>
-        <button class="mode-btn" id="btn-gift" title="ギフトモード">
-            <svg class="icon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1"/></svg>
-        </button>
+        <div class="mode-switch">
+            <button class="mode-btn active" id="btn-disk" title="ディスクモード">
+                <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>
+            </button>
+            <button class="mode-btn" id="btn-gift" title="ギフトモード">
+                <svg class="icon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1.5"/></svg>
+            </button>
+        </div>
     </div>
 </header>
 
 <main>
     <div class="card">
         <div class="stage" id="stage">
-            <button class="nav-btn prev" id="btn-prev" disabled>&#8249;</button>
-            <button class="nav-btn next" id="btn-next" disabled>&#8250;</button>
+            <button class="nav-btn prev" id="btn-prev" disabled aria-label="前の画像">&#8249;</button>
+            <button class="nav-btn next" id="btn-next" disabled aria-label="次の画像">&#8250;</button>
 
             <div class="frame-wrap">
                 <div class="ring ring-2"></div>
                 <div class="ring ring-1"></div>
                 <div class="holder" id="holder">
+                    <div id="grid-3x3" class="grid-overlay">
+                        <div class="line v1"></div><div class="line v2"></div>
+                        <div class="line h1"></div><div class="line h2"></div>
+                    </div>
+                    <div id="grid-center" class="grid-overlay">
+                        <div class="center-cross"></div>
+                        <div class="edge-mark mark-t"></div><div class="edge-mark mark-b"></div>
+                        <div class="edge-mark mark-l"></div><div class="edge-mark mark-r"></div>
+                    </div>
+
                     <div class="empty" id="emptyState">
                         <svg width="36" height="36" viewBox="0 0 24 24" fill="none"
                              stroke="currentColor" stroke-width="1.2">
@@ -289,18 +408,21 @@
 
             <div class="dropzone" id="dropzone">
                 <label class="drop-label" for="fileInput">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                          stroke="currentColor" stroke-width="2.2">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                         <polyline points="17 8 12 3 7 8"/>
                         <line x1="12" y1="3" x2="12" y2="15"/>
                     </svg>
-                    画像を選択（複数可）
+                    画像を追加（複数可）
                 </label>
                 <input type="file" id="fileInput" accept="image/*" multiple>
             </div>
 
-            <p class="hint">← → キーまたは矢印ボタンで切替</p>
+            <div class="footer">
+                <span>PC: 矢印キーで切替 / スマホ: スワイプ</span>
+                <span>v1.01</span>
+            </div>
         </div>
     </div>
 </main>
@@ -308,6 +430,7 @@
 <script>
 let imgs    = [];
 let current = 0;
+let gridState = 0; 
 
 const body      = document.body;
 const holder    = document.getElementById('holder');
@@ -322,9 +445,13 @@ const dropzone  = document.getElementById('dropzone');
 const fileInput = document.getElementById('fileInput');
 const btnDisk   = document.getElementById('btn-disk');
 const btnGift   = document.getElementById('btn-gift');
+const btnGrid   = document.getElementById('btn-grid-toggle');
 
-btnDisk.addEventListener('click', () => setMode('disk'));
-btnGift.addEventListener('click', () => setMode('gift'));
+const grid3x3    = document.getElementById('grid-3x3');
+const gridCenter = document.getElementById('grid-center');
+
+btnDisk.onclick = () => setMode('disk');
+btnGift.onclick = () => setMode('gift');
 
 function setMode(m) {
     body.className = 'mode-' + m;
@@ -332,27 +459,24 @@ function setMode(m) {
     btnGift.classList.toggle('active', m === 'gift');
 }
 
-fileInput.addEventListener('change', e => load(e.target.files));
+btnGrid.onclick = () => {
+    gridState = (gridState + 1) % 3;
+    grid3x3.className = 'grid-overlay' + (gridState === 1 ? ' grid-3x3' : '');
+    gridCenter.className = 'grid-overlay' + (gridState === 2 ? ' grid-center' : '');
+    btnGrid.classList.toggle('active', gridState !== 0);
+};
 
-const preventDefault = e => e.preventDefault();
+fileInput.onchange = e => load(e.target.files);
+
+const stop = e => e.preventDefault();
 ['dragover', 'drop'].forEach(evt => {
-    stage.addEventListener(evt, preventDefault);
-    dropzone.addEventListener(evt, preventDefault);
+    stage.addEventListener(evt, stop);
+    dropzone.addEventListener(evt, stop);
 });
 
-dropzone.addEventListener('dragenter', () => dropzone.classList.add('drag-over'));
-dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
-dropzone.addEventListener('drop', e => { 
-    dropzone.classList.remove('drag-over'); 
-    load(e.dataTransfer.files); 
-});
-
-stage.addEventListener('dragenter', () => stage.classList.add('drag-over'));
-stage.addEventListener('dragleave', () => stage.classList.remove('drag-over'));
-stage.addEventListener('drop', e => { 
-    stage.classList.remove('drag-over'); 
-    load(e.dataTransfer.files); 
-});
+stage.ondragenter = () => stage.classList.add('drag-over');
+stage.ondragleave = () => stage.classList.remove('drag-over');
+stage.ondrop = e => { stage.classList.remove('drag-over'); load(e.dataTransfer.files); };
 
 function load(fileList) {
     const files = Array.from(fileList).filter(f => f.type.startsWith('image/'));
@@ -398,7 +522,7 @@ function render() {
     imgs.forEach((_, i) => {
         const d = document.createElement('div');
         d.className = 'dot' + (i === current ? ' active' : '');
-        d.addEventListener('click', () => { current = i; render(); });
+        d.onclick = () => { current = i; render(); };
         dotsEl.appendChild(d);
     });
 
@@ -407,7 +531,7 @@ function render() {
         const t = document.createElement('img');
         t.src = im.src;
         t.className = 'thumb' + (i === current ? ' active' : '');
-        t.addEventListener('click', () => { current = i; render(); });
+        t.onclick = () => { current = i; render(); };
         thumbsEl.appendChild(t);
     });
 
@@ -415,12 +539,28 @@ function render() {
     btnNext.disabled = current === imgs.length - 1;
 }
 
-btnPrev.addEventListener('click', () => { if(current > 0) { current--; render(); } });
-btnNext.addEventListener('click', () => { if(current < imgs.length - 1) { current++; render(); } });
-document.addEventListener('keydown', e => {
-    if (e.key === 'ArrowLeft' && current > 0) { current--; render(); }
-    if (e.key === 'ArrowRight' && current < imgs.length - 1) { current++; render(); }
-});
+const go = dir => {
+    const next = current + dir;
+    if (next >= 0 && next < imgs.length) {
+        current = next;
+        render();
+    }
+};
+
+btnPrev.onclick = () => go(-1);
+btnNext.onclick = () => go(1);
+
+document.onkeydown = e => {
+    if (e.key === 'ArrowLeft') go(-1);
+    if (e.key === 'ArrowRight') go(1);
+};
+
+let startX = 0;
+stage.ontouchstart = e => startX = e.touches[0].clientX;
+stage.ontouchend = e => {
+    const diff = e.changedTouches[0].clientX - startX;
+    if (Math.abs(diff) > 50) go(diff > 0 ? -1 : 1);
+};
 
 render();
 </script>
