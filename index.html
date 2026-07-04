@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ポケストポスカ確認用</title>
-    <!-- ファビコン: ディスク型SVG -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='15' fill='%231e2830'/><circle cx='16' cy='16' r='15' fill='none' stroke='%233a7ab5' stroke-width='2.5'/><circle cx='16' cy='16' r='6' fill='white'/><circle cx='16' cy='16' r='4' fill='%23d45228'/></svg>">
     <style>
         :root {
@@ -32,6 +31,7 @@
             flex-direction: column;
         }
 
+        /* ── HEADER ── */
         header {
             background: var(--panel);
             border-bottom: 1px solid var(--border);
@@ -39,6 +39,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: .75rem;
         }
 
         .logo {
@@ -50,13 +51,22 @@
             letter-spacing: 1.5px;
             text-transform: uppercase;
             color: var(--muted);
+            white-space: nowrap;
         }
         .logo-dot {
             width: 8px; height: 8px;
             background: var(--orange);
             border-radius: 50%;
+            flex-shrink: 0;
         }
 
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+
+        /* モード切替 */
         .mode-switch {
             display: flex;
             border: 1px solid var(--border);
@@ -68,7 +78,7 @@
             border: none;
             border-right: 1px solid var(--border);
             color: var(--muted);
-            padding: 6px 16px;
+            padding: 6px 14px;
             font-size: 12px;
             font-weight: 600;
             cursor: pointer;
@@ -78,11 +88,30 @@
         .mode-btn:last-child { border-right: none; }
         .mode-btn.active { background: var(--orange); color: #fff; }
 
+        /* ガイドボタン（ヘッダー内） */
+        .guide-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            width: 32px; height: 32px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 700;
+            font-family: monospace;
+            border-radius: 4px;
+            transition: color .15s, border-color .15s, background .15s;
+            flex-shrink: 0;
+        }
+        .guide-btn:hover  { color: var(--text); border-color: var(--muted); }
+        .guide-btn.active { color: #fff; background: var(--orange); border-color: var(--orange); }
+
+        /* ── MAIN ── */
         main {
             flex: 1;
             display: flex;
             justify-content: center;
-            padding: 2rem 1rem 3rem;
+            padding: 2rem 1rem 0;
         }
 
         .card {
@@ -90,6 +119,7 @@
             max-width: 520px;
             background: var(--panel);
             border: 1px solid var(--border);
+            border-bottom: none;
         }
 
         .stage {
@@ -169,6 +199,30 @@
             gap: 10px; color: #3a4a58; font-size: 12px; text-align: center;
         }
 
+        /* ガイドオーバーレイ */
+        .guide-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .guide-overlay svg { width: 100%; height: 100%; }
+        .mode-disk .guide-overlay { border-radius: 50%; overflow: hidden; }
+        .mode-gift .guide-overlay { border-radius: 6px; overflow: hidden; }
+
+        /* ガイドラベル（画像左下） */
+        .guide-label {
+            position: absolute;
+            bottom: -22px;
+            left: 0;
+            font-size: 10px;
+            letter-spacing: .5px;
+            color: var(--muted);
+            pointer-events: none;
+            min-width: 40px;
+        }
+
+        /* カウンター・ドット */
         .counter {
             margin-top: 1rem;
             font-size: 12px;
@@ -189,7 +243,7 @@
         }
         .dot.active { background: var(--orange); }
 
-        /* ── 解像度インジケーター ── */
+        /* 解像度インジケーター */
         .res-info {
             margin-top: 1rem;
             width: 100%;
@@ -273,6 +327,24 @@
             color: var(--border);
             text-align: center;
         }
+
+        /* ── フッター免責 ── */
+        .disclaimer-wrap {
+            display: flex;
+            justify-content: center;
+            padding: 0 1rem 3rem;
+        }
+        .disclaimer {
+            width: 100%;
+            max-width: 520px;
+            border: 1px solid var(--border);
+            border-top: none;
+            padding: .75rem 1.25rem;
+            font-size: 11px;
+            color: var(--muted);
+            line-height: 1.7;
+            text-align: center;
+        }
     </style>
 </head>
 <body class="mode-disk">
@@ -282,9 +354,12 @@
         <span class="logo-dot"></span>
         ポケストポスカ確認用
     </div>
-    <div class="mode-switch">
-        <button class="mode-btn active" id="btn-disk">ディスク</button>
-        <button class="mode-btn"        id="btn-gift">カード</button>
+    <div class="header-controls">
+        <div class="mode-switch">
+            <button class="mode-btn active" id="btn-disk">ディスク</button>
+            <button class="mode-btn"        id="btn-gift">カード</button>
+        </div>
+        <button class="guide-btn" id="guideBtn" title="ガイド切替 (#)">#</button>
     </div>
 </header>
 
@@ -307,13 +382,16 @@
                         </svg>
                         <span>画像をドロップ<br>または下から選択</span>
                     </div>
+                    <div class="guide-overlay" id="guideOverlay">
+                        <svg id="guideSvg" viewBox="0 0 260 260" preserveAspectRatio="none"></svg>
+                    </div>
                 </div>
+                <span class="guide-label" id="guideLabel"></span>
             </div>
 
             <div class="counter" id="counter"></div>
             <div class="dots" id="dots"></div>
 
-            <!-- 解像度インジケーター -->
             <div class="res-info" id="resInfo">
                 <div class="res-row">
                     <span class="res-label">実効解像度</span>
@@ -327,7 +405,6 @@
 
         <div class="controls">
             <div class="thumbs" id="thumbs"></div>
-
             <div class="dropzone" id="dropzone">
                 <label class="drop-label" for="fileInput">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
@@ -336,54 +413,88 @@
                         <polyline points="17 8 12 3 7 8"/>
                         <line x1="12" y1="3" x2="12" y2="15"/>
                     </svg>
-                    画像を追加（複数可）
+                    画像を追加(複数可)
                 </label>
                 <input type="file" id="fileInput" accept="image/*" multiple>
             </div>
-
-            <p class="hint">スワイプ・← → キー・矢印ボタンで切替</p>
+            <p class="hint">スワイプ・← → キー・矢印ボタンで切替　／　# でガイド切替</p>
         </div>
     </div>
 </main>
 
-<script>
-let imgs    = [];   // { src, w, h }
-let current = 0;
+<div class="disclaimer-wrap">
+    <div class="disclaimer">
+        Exif情報(位置情報など)の消失やその他のリスクを防ぐため、保存・編集機能はありません。<br>
+        ゲーム内での見え方・解像度の確認にご利用ください(閲覧専用)。
+    </div>
+</div>
 
-const body      = document.body;
-const holder    = document.getElementById('holder');
-const empty     = document.getElementById('emptyState');
-const counterEl = document.getElementById('counter');
-const dotsEl    = document.getElementById('dots');
-const thumbsEl  = document.getElementById('thumbs');
-const stage     = document.getElementById('stage');
-const btnPrev   = document.getElementById('btn-prev');
-const btnNext   = document.getElementById('btn-next');
-const dropzone  = document.getElementById('dropzone');
-const fileInput = document.getElementById('fileInput');
-const btnDisk   = document.getElementById('btn-disk');
-const btnGift   = document.getElementById('btn-gift');
-const resInfo   = document.getElementById('resInfo');
-const resValue  = document.getElementById('resValue');
-const resBar    = document.getElementById('resBar');
+<script>
+let imgs      = [];
+let current   = 0;
+let guideMode = 0; // 0=off 1=center 2=thirds
+
+const body       = document.body;
+const holder     = document.getElementById('holder');
+const empty      = document.getElementById('emptyState');
+const counterEl  = document.getElementById('counter');
+const dotsEl     = document.getElementById('dots');
+const thumbsEl   = document.getElementById('thumbs');
+const stage      = document.getElementById('stage');
+const btnPrev    = document.getElementById('btn-prev');
+const btnNext    = document.getElementById('btn-next');
+const dropzone   = document.getElementById('dropzone');
+const fileInput  = document.getElementById('fileInput');
+const btnDisk    = document.getElementById('btn-disk');
+const btnGift    = document.getElementById('btn-gift');
+const resInfo    = document.getElementById('resInfo');
+const resValue   = document.getElementById('resValue');
+const resBar     = document.getElementById('resBar');
+const guideBtn   = document.getElementById('guideBtn');
+const guideSvg   = document.getElementById('guideSvg');
+const guideLabel = document.getElementById('guideLabel');
 
 // ── MODE ──────────────────────────────────────────
 btnDisk.addEventListener('click', () => setMode('disk'));
 btnGift.addEventListener('click', () => setMode('gift'));
-
 function setMode(m) {
     body.className = 'mode-' + m;
     btnDisk.classList.toggle('active', m === 'disk');
     btnGift.classList.toggle('active', m === 'gift');
 }
 
+// ── GUIDE ─────────────────────────────────────────
+guideBtn.addEventListener('click', () => { guideMode = (guideMode + 1) % 3; renderGuide(); });
+
+function renderGuide() {
+    const S = 260;
+    const ls = 'stroke="rgba(255,255,255,0.8)" stroke-width="0.75"';
+    const labels = ['', '2分割', '3分割'];
+
+    guideBtn.classList.toggle('active', guideMode !== 0);
+    guideLabel.textContent = labels[guideMode];
+
+    if (guideMode === 0) { guideSvg.innerHTML = ''; return; }
+
+    let lines = '';
+    if (guideMode === 1) {
+        lines = `<line x1="${S/2}" y1="0" x2="${S/2}" y2="${S}" ${ls}/>
+                 <line x1="0" y1="${S/2}" x2="${S}" y2="${S/2}" ${ls}/>`;
+    } else {
+        const a = S/3, b = S*2/3;
+        lines = `<line x1="${a}" y1="0" x2="${a}" y2="${S}" ${ls}/>
+                 <line x1="${b}" y1="0" x2="${b}" y2="${S}" ${ls}/>
+                 <line x1="0" y1="${a}" x2="${S}" y2="${a}" ${ls}/>
+                 <line x1="0" y1="${b}" x2="${S}" y2="${b}" ${ls}/>`;
+    }
+    guideSvg.innerHTML = lines;
+}
+
 // ── FILES ─────────────────────────────────────────
 fileInput.addEventListener('change', e => load(e.target.files));
-
 dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
 dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
 dropzone.addEventListener('drop', e => { e.preventDefault(); dropzone.classList.remove('drag-over'); load(e.dataTransfer.files); });
-
 stage.addEventListener('dragover', e => { e.preventDefault(); stage.classList.add('drag-over'); });
 stage.addEventListener('dragleave', () => stage.classList.remove('drag-over'));
 stage.addEventListener('drop', e => { e.preventDefault(); stage.classList.remove('drag-over'); load(e.dataTransfer.files); });
@@ -396,7 +507,6 @@ function load(fileList) {
     files.forEach(f => {
         const r = new FileReader();
         r.onload = e => {
-            // 画像サイズを取得
             const probe = new Image();
             probe.onload = () => {
                 imgs.push({ src: e.target.result, w: probe.naturalWidth, h: probe.naturalHeight });
@@ -408,56 +518,40 @@ function load(fileList) {
     });
 }
 
-// ── 実効解像度計算 ────────────────────────────────
-// Nianticの処理: 長辺を512pxにスケール → 短辺がディスクの実効px
+// ── 実効解像度 ────────────────────────────────────
 function calcDiscRes(w, h) {
-    const scale = 512 / Math.max(w, h);
-    return Math.round(Math.min(w, h) * scale);
+    return Math.round(Math.min(w, h) * (512 / Math.max(w, h)));
 }
-
 function updateResInfo() {
     const img = imgs[current];
-    if (!img || !img.w) {
-        resInfo.classList.remove('visible');
-        return;
-    }
-    const disc = calcDiscRes(img.w, img.h);
-    const pct  = Math.round((disc / 512) * 100);
-
-    resInfo.classList.add('visible');
-    resValue.textContent = `${disc}px / 512px`;
-
-    // 色分け: 480+ → good, 360+ → warn, それ以下 → bad
+    if (!img?.w) { resInfo.classList.remove('visible'); return; }
+    const disc  = calcDiscRes(img.w, img.h);
+    const pct   = Math.round((disc / 512) * 100);
     const grade = disc >= 480 ? 'good' : disc >= 360 ? 'warn' : 'bad';
-    resValue.className = 'res-value ' + grade;
-    resBar.style.width = pct + '%';
-    resBar.style.background =
-        grade === 'good' ? 'var(--good)' :
-        grade === 'warn' ? 'var(--warn)' : 'var(--bad)';
+    resInfo.classList.add('visible');
+    resValue.textContent  = `${disc}px / 512px`;
+    resValue.className    = 'res-value ' + grade;
+    resBar.style.width    = pct + '%';
+    resBar.style.background = `var(--${grade})`;
 }
 
 // ── RENDER ────────────────────────────────────────
 function render() {
     const old = holder.querySelector('img');
     if (old) old.remove();
-
     empty.style.display = imgs.length ? 'none' : 'flex';
     if (!imgs.length) {
         counterEl.textContent = '';
         dotsEl.innerHTML = '';
         thumbsEl.innerHTML = '';
-        btnPrev.disabled = true;
-        btnNext.disabled = true;
+        btnPrev.disabled = btnNext.disabled = true;
         resInfo.classList.remove('visible');
         return;
     }
-
     current = Math.max(0, Math.min(current, imgs.length - 1));
-
     const el = document.createElement('img');
     el.src = imgs[current].src;
-    holder.appendChild(el);
-
+    holder.insertBefore(el, holder.querySelector('.guide-overlay'));
     counterEl.textContent = `${current + 1} / ${imgs.length}`;
     updateResInfo();
 
@@ -485,40 +579,33 @@ function render() {
 function go(dir) {
     const next = current + dir;
     if (next < 0 || next >= imgs.length) return;
-    current = next;
-    render();
+    current = next; render();
 }
 
-// ── NAV ───────────────────────────────────────────
 btnPrev.addEventListener('click', () => go(-1));
 btnNext.addEventListener('click', () => go(1));
-
 document.addEventListener('keydown', e => {
     if (e.key === 'ArrowLeft')  go(-1);
     if (e.key === 'ArrowRight') go(1);
+    if (e.key === '#') { guideMode = (guideMode + 1) % 3; renderGuide(); }
 });
 
 // ── SWIPE ─────────────────────────────────────────
-const THRESHOLD = 40;
 let swipeX = null, swipeY = null;
-
 stage.addEventListener('touchstart', e => {
     if (e.touches.length !== 1) return;
-    swipeX = e.touches[0].clientX;
-    swipeY = e.touches[0].clientY;
+    swipeX = e.touches[0].clientX; swipeY = e.touches[0].clientY;
 }, { passive: true });
-
 stage.addEventListener('touchend', e => {
     if (swipeX === null) return;
     const dx = e.changedTouches[0].clientX - swipeX;
     const dy = e.changedTouches[0].clientY - swipeY;
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > THRESHOLD) {
-        go(dx < 0 ? 1 : -1);
-    }
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) go(dx < 0 ? 1 : -1);
     swipeX = null; swipeY = null;
 }, { passive: true });
 
 render();
+renderGuide();
 </script>
 </body>
 </html>
